@@ -34,7 +34,7 @@ const logger = new Logger('Platforms/Discord')
 export default class Discord implements Platform {
 	public name = 'Discord'
 
-	private client!: DiscordClient
+	public readonly client!: DiscordClient
 
 	public constructor(
 		private config: DiscordConfig
@@ -85,6 +85,36 @@ export default class Discord implements Platform {
 		this.client.login(this.token)
 	}
 
+	public async listMessages(id: string): Promise<any[]> {
+		const channel = await this.client.channels.fetch(id)
+		if (channel?.isTextBased()) {
+			const messages = await channel.messages.fetch()
+			// console.log(messages)
+			return messages as any
+		}
+		return []
+	}
+
+	public async getUser(id: string): Promise<{
+		id: string
+		name: string
+		displayName: string
+	} | undefined> {
+		if (id.startsWith('<')) {
+			id = id.replace('<@', '').replace('>', '')
+		}
+		try {
+			const user = await this.client.users.fetch(id)
+			return {
+				id: user.id,
+				name: user.username,
+				displayName: user.displayName
+			}
+		} catch {
+			return undefined
+		}
+	}
+
 	private updatePresence = async () => {
 		// Fetch guilds count and display it
 		const size = await this.client.guilds.fetch()
@@ -101,7 +131,6 @@ export default class Discord implements Platform {
 			body: commands.map((command) => {
 				const defaultName = getLocalizedValue(command.name, this.config.defaultLang)
 				const defaultDescription = getLocalizedValue(command.description, this.config.defaultLang)
-
 				return {
 					name: defaultName,
 					name_localizations: typeof command.name === 'object' ? this.remapLocalized(command.name) : undefined,
@@ -158,6 +187,7 @@ export default class Discord implements Platform {
 	private onMessage = async (message: DiscordMessage<boolean>) => {
 		// Ignore message by bots
 		if (message.author.bot) {
+			console.log('ignoring message sent by bot')
 			return
 		}
 
@@ -182,6 +212,7 @@ export default class Discord implements Platform {
 					prefix === `<@${this.clientId}>`
 				)
 			) {
+				console.log('ignoring message not communicating wit hte bot', prefix)
 				return
 			}
 		}
@@ -198,7 +229,7 @@ export default class Discord implements Platform {
 
 		// ignore message if the command does not exist
 		if (!command) {
-			command = 'help'
+			command = 'blast'
 		}
 
 		logger.log(`processing command: ${command} ${args.join(' ')}`)
@@ -209,7 +240,18 @@ export default class Discord implements Platform {
 			const msg = await message.reply('<a:typing:861888874404773888> Sending Command...')
 			try {
 				// Process and edit the original message
-				const response = await Bot.get().handleCommand(this.buildContext(prefix, command, args))
+				const response = await Bot.get().handleCommand({
+					prefix: prefix,
+					command: command,
+					args,
+					platform: this,
+					channel: message.channelId,
+					author: {
+						id: message.author.id,
+						name: message.author.username,
+						displayName: message.author.displayName
+					}
+				})
 				await msg.edit(this.formatMessage(response))
 				logger.log(`command processed: ${message.content}`)
 			} catch (error) {
@@ -270,8 +312,19 @@ export default class Discord implements Platform {
 			logger.log(`processing command: ${interaction.commandName} ${args.join(' ')}`)
 			try {
 
-				// Process and reply to the message
-				const response = await Bot.get().handleCommand(this.buildContext('/', interaction.commandName, args, locale))
+				const response = await Bot.get().handleCommand<DiscordContext>({
+					prefix: '/',
+					command: interaction.commandName,
+					args,
+					platform: this,
+					lang: locale,
+					channel: interaction.channelId,
+					author: {
+						id: interaction.user.id,
+						name: interaction.user.username,
+						displayName: interaction.user.displayName
+					}
+				})
 				interaction.reply(this.formatMessage(response))
 				logger.log(`command processed: ${interaction.commandName} ${args.join(' ')}`)
 			} catch (error) {
@@ -282,7 +335,7 @@ export default class Discord implements Platform {
 		}
 	}
 
-	private formatMessage(message: string | Message): string | MessagePayload | BaseMessageOptions {
+	public formatMessage(message: string | Message): string | MessagePayload | BaseMessageOptions {
 		if (typeof message === 'string') {
 			return message
 		}

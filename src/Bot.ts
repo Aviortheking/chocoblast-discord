@@ -58,7 +58,7 @@ export default class Bot {
 		await Promise.all(botsToLoad)
 	}
 
-	public async handleCommand(req: Context): Promise<Message | string> {
+	public async handleCommand<C extends Context = Context>(req: C): Promise<Message | string> {
 		const cmd = await this.findCommandToExecute(req)
 
 		if (typeof cmd === 'string') {

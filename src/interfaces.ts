@@ -14,11 +14,26 @@ export interface Context {
 	 * Discord or Telegram depending the client that ask the command
 	 */
 	platform: Platform
+
+	/**
+	 * the author of the message
+	 */
+	author?: {
+		id: string
+		/**
+		 * the user name
+		 */
+		name: string
+		/**
+		 * the user display name
+		 */
+		displayName: string
+	}
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface DiscordContext extends Context {
-
+	channel: string
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
@@ -142,6 +157,8 @@ export interface Platform {
 	 * initialize the underlying client bot
 	 */
 	init(): Promise<void>
+
+	listMessages(channel: string): Promise<Array<any>>
 }
 
 export interface Config {

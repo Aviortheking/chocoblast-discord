@@ -1,5 +1,5 @@
 {
-	"enabled": true,
+	"enabled": false,
 	"components": {
 		"select": {
 			"optionsPerLines": 3
