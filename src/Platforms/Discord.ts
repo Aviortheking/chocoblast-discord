@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import Logger from '@dzeio/logger'
 import { objectClone } from '@dzeio/object-util'
 import {

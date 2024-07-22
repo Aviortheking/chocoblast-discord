@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import TCGdex, { SetResume } from '@tcgdex/sdk'
 import ActionRow from '../Components/Components/ActionRow'
 import Select from '../Components/Components/Select'

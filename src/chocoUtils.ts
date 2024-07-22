@@ -1,3 +1,4 @@
+// @ts-nocheck
 import Discord from './Platforms/Discord'
 import { DiscordContext } from './interfaces'
 

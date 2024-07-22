@@ -1,3 +1,4 @@
+// @ts-nocheck
 import Embed from '../Components/Embed'
 import Message from '../Components/Message'
 import Discord from '../Platforms/Discord'

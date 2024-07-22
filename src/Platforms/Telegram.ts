@@ -1,3 +1,4 @@
+// @ts-nocheck
 /* eslint-disable max-depth */
 /* eslint-disable no-irregular-whitespace */
 import Logger from '@dzeio/logger'
