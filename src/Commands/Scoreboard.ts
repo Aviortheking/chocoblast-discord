@@ -71,7 +71,7 @@ export default class blast implements Command {
 			}
 			let found = false
 			for (const score of scores) {
-				if (score.user === user || Number.isNaN(score.score)) {
+				if (score.user === user && !Number.isNaN(score.score)) {
 					score.score += change
 					found = true
 				}
