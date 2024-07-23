@@ -5,7 +5,7 @@ import { DiscordContext } from './interfaces'
 export type ScoreList = Array<{user: string, score: number}>
 
 export function buildScoreboard(list: ScoreList) {
-	list = list.filter((it) => it.score !== 0).sort((a, b) => b.score - a.score)
+	list = list.filter((it) => it.score !== 0 && !Number.isNaN(it.score)).sort((a, b) => b.score - a.score)
 	const userSize = list.reduce((p, c) => Math.max(c.user.length, p), 4)
 	const scoreSize = list.reduce((p, c) => Math.max(c.score.toString().length, p), 12)
 	return `\`\`\`
