@@ -90,7 +90,7 @@ export default class Discord implements Platform {
 	public async listMessages(id: string): Promise<any[]> {
 		const channel = await this.client.channels.fetch(id)
 		if (channel?.isTextBased()) {
-			const messages = await channel.messages.fetch()
+			const messages = await channel.messages.fetchPinned()
 			// console.log(messages)
 			return messages as any
 		}
@@ -103,7 +103,7 @@ export default class Discord implements Platform {
 		displayName: string
 	} | undefined> {
 		if (id.startsWith('<')) {
-			id = id.replace('<@', '').replace('>', '')
+			id = id.replace('<@', '').replace('<', '').replace('>', '')
 		}
 		try {
 			const user = await this.client.users.fetch(id)
@@ -129,18 +129,20 @@ export default class Discord implements Platform {
 		const commands = await Bot.get().getCommands(this)
 		const rest = new REST({ version: '10' }).setToken(this.token)
 
-		rest.put(Routes.applicationCommands(this.clientId), {
-			body: commands.map((command) => {
-				const defaultName = getLocalizedValue(command.name, this.config.defaultLang)
-				const defaultDescription = getLocalizedValue(command.description, this.config.defaultLang)
-				return {
-					name: defaultName,
-					name_localizations: typeof command.name === 'object' ? this.remapLocalized(command.name) : undefined,
-					description: defaultDescription,
-					description_localizations: typeof command.description === 'object' ? this.remapLocalized(command.description) : undefined,
-					options: command.options?.map(this.formatOption).flat()
-				}
-			})
+		const list = commands.map((command) => {
+			const defaultName = getLocalizedValue(command.name, this.config.defaultLang)
+			const defaultDescription = getLocalizedValue(command.description, this.config.defaultLang)
+			return {
+				name: defaultName,
+				name_localizations: typeof command.name === 'object' ? this.remapLocalized(command.name) : undefined,
+				description: defaultDescription,
+				description_localizations: typeof command.description === 'object' ? this.remapLocalized(command.description) : undefined,
+				options: command.options?.flatMap(this.formatOption)
+			}
+		})
+
+		await rest.put(Routes.applicationCommands(this.clientId), {
+			body: list
 		})
 	}
 
@@ -164,7 +166,11 @@ export default class Discord implements Platform {
 			description_localizations: typeof option.description === 'object' ? this.remapLocalized(option.description) : undefined,
 			description: getLocalizedValue(option.description, this.config.defaultLang),
 			required: option.required,
-			choices: option.choices,
+			choices: option.choices?.map((choice) => ({
+				name: getLocalizedValue(choice.name, this.config.defaultLang),
+				name_localizations: typeof choice.name === 'object' ? this.remapLocalized(choice.name) : undefined,
+				value: choice.value
+			})),
 			options: option.options?.map(this.formatOption)
 		}
 	}
@@ -176,11 +182,11 @@ export default class Discord implements Platform {
 			case CommandOptionType.INTEGER:
 				return 4
 			case CommandOptionType.USER:
-				return 5
-			case CommandOptionType.ROLE:
 				return 6
+			case CommandOptionType.ROLE:
+				return 8
 			case CommandOptionType.MENTIONABLE:
-				return 7
+				return 9
 		}
 		return -1
 	}

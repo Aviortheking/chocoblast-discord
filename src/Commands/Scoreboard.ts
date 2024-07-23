@@ -19,7 +19,26 @@ export default class blast implements Command {
 		name: 'action',
 		description: 'the action you want to do (\'add\', \'remove\', \'reload\')',
 		required: true,
-		type: CommandOptionType.STRING
+		type: CommandOptionType.STRING,
+		choices: [{
+			name: {
+				en: 'Add',
+				fr: 'Ajouter'
+			},
+			value: 'add'
+		}, {
+			name: {
+				en: 'Remove',
+				fr: 'Enlever'
+			},
+			value: 'remove'
+		}, {
+			name: {
+				en: 'Reload',
+				fr: 'Recharger'
+			},
+			value: 'reload'
+		}]
 	}, {
 		name: 'user',
 		description: 'The user to run on',
@@ -47,9 +66,12 @@ export default class blast implements Command {
 		if (action !== 'reload') {
 			const user = (await discord.getUser(userTemp))?.displayName ?? userTemp
 			change = action === 'remove' ? -Number.parseInt(changeTemp, 10) : Number.parseInt(changeTemp, 10)
+			if (Number.isNaN(change)) {
+				return 'please indicate a number !'
+			}
 			let found = false
 			for (const score of scores) {
-				if (score.user === user) {
+				if (score.user === user || Number.isNaN(score.score)) {
 					score.score += change
 					found = true
 				}
